@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Production App - Login</title>
+    <title>Production App - Register</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -12,14 +12,14 @@
             padding: 0;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             padding: 20px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .container {
-            max-width: 400px;
+            max-width: 450px;
             margin: 40px auto;
             background: white;
             border-radius: 10px;
@@ -45,6 +45,7 @@
             font-weight: 500;
         }
         input[type="text"],
+        input[type="email"],
         input[type="password"] {
             width: 100%;
             padding: 12px 15px;
@@ -55,14 +56,14 @@
             transition: border-color 0.3s;
         }
         input:focus {
-            border-color: #667eea;
+            border-color: #4facfe;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
         }
         .btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             border: none;
             border-radius: 5px;
@@ -73,22 +74,22 @@
         }
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 7px 14px rgba(79, 172, 254, 0.3);
         }
         .btn:active {
             transform: translateY(0);
         }
-        .register-link {
+        .login-link {
             text-align: center;
             margin-top: 20px;
             color: #666;
         }
-        .register-link a {
-            color: #667eea;
+        .login-link a {
+            color: #4facfe;
             text-decoration: none;
             font-weight: 600;
         }
-        .register-link a:hover {
+        .login-link a:hover {
             text-decoration: underline;
         }
         .message {
@@ -113,20 +114,25 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
-        .token-display {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border: 1px dashed #adb5bd;
-            font-family: monospace;
-            font-size: 14px;
-            word-break: break-all;
-            display: none;
+        .password-requirements {
+            margin-top: 5px;
+            font-size: 13px;
+            color: #666;
         }
-        .token-display h4 {
-            margin-top: 0;
-            color: #495057;
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        .requirement .icon {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+        .requirement.met {
+            color: #28a745;
+        }
+        .requirement.unmet {
+            color: #dc3545;
         }
         .security-note {
             margin-top: 25px;
@@ -145,106 +151,138 @@
 <body>
     <div class="header">
         <h1>Production App</h1>
-        <p>Secure authentication system</p>
+        <p>Create your secure account</p>
     </div>
     
     <div class="container">
         <div class="content">
-            <h2>Login to Your Account</h2>
+            <h2>Create a New Account</h2>
             
-            <form id="login-form">
+            <form id="registration-form">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Your email address" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" id="password" name="password" placeholder="At least 6 characters" required>
+                    <div class="password-requirements">
+                        <div class="requirement unmet" id="req-length">
+                            <span class="icon">❌</span>
+                            <span>At least 6 characters</span>
+                        </div>
+                        <div class="requirement unmet" id="req-match">
+                            <span class="icon">❌</span>
+                            <span>Passwords match</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <button type="submit" class="btn">Login</button>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required>
+                </div>
+                
+                <button type="submit" class="btn">Create Account</button>
             </form>
             
-            <div class="register-link">
-                <p>Don't have an account? <a href="/register">Register here</a></p>
+            <div class="login-link">
+                <p>Already have an account? <a href="/">Login here</a></p>
             </div>
             
             <div id="message" class="message"></div>
             
-            <div id="token-display" class="token-display">
-                <h4>Authentication Token (Saved in localStorage)</h4>
-                <p id="token-text"></p>
-                <p><small>Use this token for authenticated API requests. It's automatically saved for your convenience.</small></p>
-            </div>
-            
             <div class="security-note">
                 <strong>Security Note:</strong> This is a production app with security features enabled. 
-                Passwords are securely hashed using bcrypt and tokens are signed with JWT.
+                Passwords are securely hashed using bcrypt and never stored in plain text.
+                After registration, you will be able to login with your credentials.
             </div>
         </div>
     </div>
     
     <script>
         $(document).ready(function() {
-            // Check if token exists in localStorage
-            const savedToken = localStorage.getItem('auth_token');
-            if (savedToken) {
-                $('#token-text').text(savedToken.substring(0, 50) + '...');
-                $('#token-display').show();
-                showMessage('Token loaded from previous session. You are already authenticated.', 'info');
+            // Password validation
+            function validatePassword() {
+                const password = $('#password').val();
+                const confirm = $('#confirm_password').val();
+                
+                // Length requirement
+                const lengthMet = password.length >= 6;
+                $('#req-length').toggleClass('met', lengthMet).toggleClass('unmet', !lengthMet);
+                $('#req-length .icon').text(lengthMet ? '✅' : '❌');
+                
+                // Match requirement
+                const matchMet = password === confirm && password.length > 0;
+                $('#req-match').toggleClass('met', matchMet).toggleClass('unmet', !matchMet);
+                $('#req-match .icon').text(matchMet ? '✅' : '❌');
+                
+                return lengthMet && matchMet;
             }
             
-            // Handle login form submission
-            $('#login-form').on('submit', function(e) {
+            // Real-time validation
+            $('#password, #confirm_password').on('input', validatePassword);
+            
+            // Handle registration form submission
+            $('#registration-form').on('submit', function(e) {
                 e.preventDefault();
                 
+                if (!validatePassword()) {
+                    showMessage('Please fix password requirements before submitting.', 'error');
+                    return;
+                }
+                
                 const username = $('#username').val().trim();
+                const email = $('#email').val().trim();
                 const password = $('#password').val();
                 
-                if (!username || !password) {
-                    showMessage('Please enter both username and password.', 'error');
+                if (!username || !email || !password) {
+                    showMessage('Please fill in all fields.', 'error');
                     return;
                 }
                 
                 const formData = {
                     username: username,
+                    email: email,
                     password: password
                 };
                 
                 // Show loading state
                 const submitBtn = $(this).find('.btn');
                 const originalText = submitBtn.text();
-                submitBtn.text('Logging in...').prop('disabled', true);
+                submitBtn.text('Creating Account...').prop('disabled', true);
                 
                 $.ajax({
-                    url: '/login',
+                    url: '/register',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function(data) {
-                        if (data.token) {
-                            // Save token to localStorage
-                            localStorage.setItem('auth_token', data.token);
-                            $('#token-text').text(data.token.substring(0, 50) + '...');
-                            $('#token-display').show();
-                            showMessage('Login successful! Token saved.', 'success');
-                            $('#login-form')[0].reset();
+                        if (data.message) {
+                            showMessage('Registration successful! You can now login with your credentials.', 'success');
+                            $('#registration-form')[0].reset();
+                            validatePassword(); // Reset validation icons
                             
-                            // Redirect to a dashboard or show more options
+                            // Auto-redirect to login after 3 seconds
                             setTimeout(function() {
-                                showMessage('You can now access protected resources.', 'info');
-                            }, 1500);
-                        } else {
-                            showMessage('Login failed: No token received.', 'error');
+                                window.location.href = '/';
+                            }, 3000);
+                        } else if (data.error) {
+                            showMessage('Registration failed: ' + data.error, 'error');
                         }
                     },
                     error: function(xhr) {
                         try {
                             const data = JSON.parse(xhr.responseText);
-                            showMessage('Login failed: ' + data.error, 'error');
+                            showMessage('Registration failed: ' + data.error, 'error');
                         } catch (e) {
-                            showMessage('Login failed. Please try again.', 'error');
+                            showMessage('Registration failed. Please try again.', 'error');
                         }
                     },
                     complete: function() {
@@ -266,12 +304,8 @@
                 }
             }
             
-            // Optional: Clear token button (not shown, but could be added)
-            function clearToken() {
-                localStorage.removeItem('auth_token');
-                $('#token-display').hide();
-                showMessage('Token cleared.', 'info');
-            }
+            // Initial validation
+            validatePassword();
         });
     </script>
 </body>

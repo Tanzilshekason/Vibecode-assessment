@@ -115,8 +115,12 @@ def login():
     else:
         return jsonify({'error': 'User not found'}), 404
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
+    if request.method == 'GET':
+        return render_template('register.html')
+    
+    # POST handling
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')

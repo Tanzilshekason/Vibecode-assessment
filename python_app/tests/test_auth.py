@@ -37,6 +37,13 @@ class AuthTestCase(unittest.TestCase):
         self.assertIn(b'Production App', response.data)
         self.assertIn(b'Welcome to the app', response.data)
     
+    def test_index_has_registration_link(self):
+        """Test that the index page contains a link to the registration page."""
+        response = self.app.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Register here', response.data)
+        self.assertIn(b'/register', response.data)
+    
     def test_login_missing_credentials(self):
         """Test login with missing credentials."""
         response = self.app.post('/login',
@@ -80,6 +87,13 @@ class AuthTestCase(unittest.TestCase):
                                 data=json.dumps(data),
                                 content_type='application/json')
         self.assertEqual(response.status_code, 400)
+    
+    def test_register_page_loads(self):
+        """Test that the registration page loads via GET request."""
+        response = self.app.get('/register')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Register - Production App', response.data)
+        self.assertIn(b'Create a New Account', response.data)
     
     def test_login_valid_credentials(self):
         """Test login with valid credentials."""
