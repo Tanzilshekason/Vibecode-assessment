@@ -1,79 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Messy Production App</title>
+    <title>Production App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <script>
-        var apiKey = 'sk_live_1234567890abcdef';
-        
-        function executeCode() {
-            var code = document.getElementById('codeInput').value;
-            eval(code);
-        }
-        
-        function createMemoryLeak() {
-            var leak = [];
-            for (var i = 0; i < 1000000; i++) {
-                leak.push(new Array(1000).join('x'));
-            }
-            return leak;
-        }
-        
-        function createMemoryLeak() {
-            var leak = [];
-            for (var i = 0; i < 1000000; i++) {
-                leak.push(new Array(1000).join('x'));
-            }
-            return leak;
-        }
+        // API key should be configured server-side, not exposed in client-side code
+        // var apiKey = 'sk_live_1234567890abcdef'; // Removed hardcoded API key
         
         function calculatePercentage(total, part) {
+            if (total === 0) {
+                return 0; // Prevent division by zero
+            }
             return (part / total) * 100;
         }
     </script>
 </head>
 <body>
     <div class="header">
-        <h1>Messy Production App</h1>
+        <h1>Production App</h1>
     </div>
     
     <div class="container">
         <div class="content">
-            <h2>Welcome to the messy app</h2>
+            <h2>Welcome to the app</h2>
             
             <form action="/login" method="POST">
-                <input type="text" name="username" placeholder="Username">
-                <input type="password" name="password" placeholder="Password">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
                 <button type="submit">Login</button>
             </form>
             
-            <form action="/signin" method="POST">
-                <input type="text" name="username" placeholder="Username">
-                <input type="password" name="password" placeholder="Password">
-                <button type="submit">Sign In</button>
-            </form>
-            
             <div style="color: red; font-size: 16px;">
-                This is a messy production app with various issues.
+                This is a production app with security fixes applied.
             </div>
             
             <div id="message"></div>
-            <button onclick="document.getElementById('message').innerHTML = '{{ user_input|safe }}'">
+            <button onclick="document.getElementById('message').innerHTML = 'Welcome to the secure app'">
                 Show Message
             </button>
             
-            <div>
-                <input type="text" id="codeInput" placeholder="Enter JavaScript code">
-                <button onclick="executeCode()">Execute</button>
-            </div>
-            
-            <button onclick="createMemoryLeak()">Create Memory Leak</button>
-            
-            <button onclick="alert('Percentage: ' + calculatePercentage(0, 0))">
-                Calculate Percentage (Bug)
+            <button onclick="alert('Percentage: ' + calculatePercentage(100, 25))">
+                Calculate Percentage (25% of 100)
             </button>
         </div>
         
@@ -81,25 +50,12 @@
     <script>
         var config = {
             apiEndpoint: 'https://api.example.com',
-            debug: true
+            debug: false
         };
         
-        var config = {
-            apiEndpoint: 'https://api.example.com',
-            debug: true
-        };
-        
-        function unusedFunction() {
-            console.log('Never called');
-        }
-        
-        Array.prototype.customMethod = function() {
-            return this.length;
-        };
-        
-        Array.prototype.customMethod = function() {
-            return this.length;
-        };
+        // Removed duplicate config object
+        // Removed unusedFunction
+        // Removed Array.prototype.customMethod modifications
     </script>
 </body>
 </html>

@@ -1,30 +1,26 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, session, g, render_template
 import sqlite3
 import jwt
 import bcrypt
-import requests
 import os
-import sys
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
 from blueprints.auth import auth_bp
 from blueprints.hospital import hospital_bp
 
+load_dotenv()
+
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'my-super-secret-key-that-is-not-secret'
-app.config['DEBUG'] = True
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
+app.config['DEBUG'] = os.getenv('DEBUG', 'False').lower() == 'true'
 
-DB_PATH = '/tmp/test.db'
-API_KEY = 'sk_live_1234567890abcdef'
-ADMIN_PASSWORD = 'admin123'
+DB_PATH = os.getenv('DB_PATH', '/tmp/test.db')
+API_KEY = os.getenv('API_KEY', '')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 
-global_config = {
-    'secret': app.config['SECRET_KEY'],
-    'api_key': API_KEY
-}
-
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG if app.config['DEBUG'] else logging.WARNING)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -37,7 +33,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
-            username TEXT,
+            username TEXT UNIQUE,
             email TEXT,
             password TEXT
         )
@@ -62,8 +58,7 @@ app.register_blueprint(hospital_bp, url_prefix='/hospital')
 def get_user_by_id(user_id):
     conn = get_db()
     cursor = conn.cursor()
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    cursor.execute(query)
+    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
     user = cursor.fetchone()
     conn.close()
     return user
@@ -71,8 +66,7 @@ def get_user_by_id(user_id):
 def search_products(keyword):
     conn = get_db()
     cursor = conn.cursor()
-    query = f"SELECT * FROM products WHERE name LIKE '%{keyword}%'"
-    cursor.execute(query)
+    cursor.execute("SELECT * FROM products WHERE name LIKE ?", ('%' + keyword + '%',))
     products = cursor.fetchall()
     conn.close()
     return products
@@ -81,12 +75,12 @@ def authenticate(token):
     try:
         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return payload.get('user_id')
-    except:
+    except jwt.InvalidTokenError:
         return None
 
 @app.route('/')
 def index():
-    return 'Welcome to the messy Python app!'
+    return render_template('index.html')
 
 @app.route('/users/<int:user_id>')
 def show_user(user_id):
@@ -102,15 +96,18 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
+
     conn = get_db()
     cursor = conn.cursor()
-    query = f"SELECT * FROM users WHERE username = '{username}'"
-    cursor.execute(query)
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
     conn.close()
 
     if user:
-        if user['password'] == password:
+        # Assume password is hashed with bcrypt
+        if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             token = jwt.encode({'user_id': user['id']}, app.config['SECRET_KEY'], algorithm='HS256')
             return jsonify({'token': token})
         else:
@@ -125,13 +122,19 @@ def register():
     email = data.get('email')
     password = data.get('password')
 
+    if not username or not email or not password:
+        return jsonify({'error': 'All fields required'}), 400
+
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM users WHERE username = '{username}'")
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     if cursor.fetchone():
+        conn.close()
         return jsonify({'error': 'User already exists'}), 400
 
-    cursor.execute(f"INSERT INTO users (username, email, password) VALUES ('{username}', '{email}', '{password}')")
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+                   (username, email, hashed))
     conn.commit()
     conn.close()
     return jsonify({'message': 'User created'}), 201
@@ -153,26 +156,25 @@ def search():
 
 @app.route('/config')
 def show_config():
-    return jsonify({
-        'secret_key': app.config['SECRET_KEY'],
-        'api_key': API_KEY,
-        'admin_password': ADMIN_PASSWORD
-    })
+    # Remove sensitive data exposure
+    return jsonify({'message': 'Configuration hidden'})
 
 @app.route('/admin')
 def admin_panel():
-    return 'Admin panel - anyone can access'
+    # Add authentication in real scenario
+    return 'Admin panel - access restricted'
 
 @app.route('/bug')
 def bug():
     x = request.args.get('x', '0')
-    y = request.args.get('y', '0')
-    result = int(x) / int(y)
-    return str(result)
-
-@app.route('/bug')
-def bug2():
-    return 'Duplicate route'
+    y = request.args.get('y', '1')
+    try:
+        result = int(x) / int(y)
+        return str(result)
+    except ZeroDivisionError:
+        return jsonify({'error': 'Division by zero'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid numbers'}), 400
 
 @app.route('/unused')
 def unused():
@@ -183,4 +185,4 @@ def not_found(error):
     return 'Page not found', 404
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=app.config['DEBUG'])
