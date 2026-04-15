@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Production App - Login</title>
+    <title>Development App - Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -144,7 +144,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Production App</h1>
+        <h1>Development App</h1>
         <p>Secure authentication system</p>
     </div>
     
@@ -172,29 +172,15 @@
             
             <div id="message" class="message"></div>
             
-            <div id="token-display" class="token-display">
-                <h4>Authentication Token (Saved in localStorage)</h4>
-                <p id="token-text"></p>
-                <p><small>Use this token for authenticated API requests. It's automatically saved for your convenience.</small></p>
-            </div>
-            
             <div class="security-note">
-                <strong>Security Note:</strong> This is a production app with security features enabled. 
-                Passwords are securely hashed using bcrypt and tokens are signed with JWT.
+                <strong>Security Note:</strong> This is a development app with security features enabled.
+                Passwords are securely hashed using bcrypt. Sessions are used for authentication.
             </div>
         </div>
     </div>
     
     <script>
         $(document).ready(function() {
-            // Check if token exists in localStorage
-            const savedToken = localStorage.getItem('auth_token');
-            if (savedToken) {
-                $('#token-text').text(savedToken.substring(0, 50) + '...');
-                $('#token-display').show();
-                showMessage('Token loaded from previous session. You are already authenticated.', 'info');
-            }
-            
             // Handle login form submission
             $('#login-form').on('submit', function(e) {
                 e.preventDefault();
@@ -223,20 +209,16 @@
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function(data) {
-                        if (data.token) {
-                            // Save token to localStorage
-                            localStorage.setItem('auth_token', data.token);
-                            $('#token-text').text(data.token.substring(0, 50) + '...');
-                            $('#token-display').show();
-                            showMessage('Login successful! Token saved.', 'success');
+                        if (data.success) {
+                            showMessage('Login successful! Redirecting to dashboard...', 'success');
                             $('#login-form')[0].reset();
                             
-                            // Redirect to a dashboard or show more options
+                            // Redirect to dashboard after short delay
                             setTimeout(function() {
-                                showMessage('You can now access protected resources.', 'info');
-                            }, 1500);
+                                window.location.href = data.redirect || '/dashboard';
+                            }, 1000);
                         } else {
-                            showMessage('Login failed: No token received.', 'error');
+                            showMessage('Login failed: ' + (data.error || 'Unknown error'), 'error');
                         }
                     },
                     error: function(xhr) {
@@ -264,13 +246,6 @@
                         messageDiv.fadeOut();
                     }, 5000);
                 }
-            }
-            
-            // Optional: Clear token button (not shown, but could be added)
-            function clearToken() {
-                localStorage.removeItem('auth_token');
-                $('#token-display').hide();
-                showMessage('Token cleared.', 'info');
             }
         });
     </script>

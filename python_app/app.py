@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, g, render_template
+from flask import Flask, request, jsonify, session, g, render_template, redirect
 import sqlite3
 import jwt
 import bcrypt
@@ -6,6 +6,7 @@ import os
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
+from functools import wraps
 from blueprints.auth import auth_bp
 from blueprints.hospital import hospital_bp
 
@@ -78,8 +79,36 @@ def authenticate(token):
     except jwt.InvalidTokenError:
         return None
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Authentication required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('logged_in'):
+        return redirect('/')
+    # Get user info from session
+    user_id = session.get('user_id')
+    username = session.get('username', 'User')
+    
+    # You could fetch more user details from database if needed
+    return render_template('dashboard.html', username=username, user_id=user_id)
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    # Clear the session
+    session.clear()
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
+
 @app.route('/')
 def index():
+    # If user is already logged in, redirect to dashboard
+    if session.get('logged_in'):
+        return redirect('/dashboard')
     return render_template('index.html')
 
 @app.route('/users/<int:user_id>')
@@ -108,8 +137,11 @@ def login():
     if user:
         # Assume password is hashed with bcrypt
         if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-            token = jwt.encode({'user_id': user['id']}, app.config['SECRET_KEY'], algorithm='HS256')
-            return jsonify({'token': token})
+            # Store user info in session
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['logged_in'] = True
+            return jsonify({'success': True, 'redirect': '/dashboard'})
         else:
             return jsonify({'error': 'Invalid password'}), 401
     else:
